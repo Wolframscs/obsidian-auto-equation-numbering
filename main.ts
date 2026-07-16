@@ -326,6 +326,22 @@ export class EquationNumberingView extends ItemView {
         await this.plugin.updateNumberingForActiveFile();
       }
     });
+
+    // Reuse duplicate equations toggle
+    new Setting(container)
+      .setName("Reuse first number for duplicate equations")
+      .setDesc("When enabled, identical display equations in one note receive the number of their first occurrence.")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.reuseNumberForDuplicates)
+          .onChange(async (value) => {
+            this.plugin.settings.reuseNumberForDuplicates = value;
+            await this.plugin.saveSettings();
+            if (isEnabled) {
+              await this.plugin.updateNumberingForActiveFile();
+            }
+          })
+      );
   }
 }
 
@@ -679,17 +695,5 @@ class EquationNumberingSettingTab extends PluginSettingTab {
     containerEl.createEl("p", {
       text: "Equation numbering is manual and managed per-document. Toggle numbering or change formatting in the right sidebar control panel.",
     });
-
-    new Setting(containerEl)
-      .setName("Reuse first number for duplicate equations")
-      .setDesc("When enabled, identical display equations in one note receive the number of their first occurrence.")
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.reuseNumberForDuplicates)
-          .onChange(async (value) => {
-            this.plugin.settings.reuseNumberForDuplicates = value;
-            await this.plugin.saveSettings();
-          })
-      );
   }
 }
