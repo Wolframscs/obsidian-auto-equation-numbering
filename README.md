@@ -1,80 +1,123 @@
 # Auto Equation Numbering for Obsidian
 
-为 Markdown 显示公式自动写入 `\tag{n}`。
+An Obsidian plugin that automatically numbers display equations (`$$ ... $$`) and keeps your equation references in sync.
 
-## 行为与控制面板
+[简体中文](#简体中文)
 
-- 识别 `$$ ... $$` 显示公式，不处理行内公式 `$...$`。
-- **右侧控制面板 (Sidebar)**：点击左侧功能区的“有序列表”图标，或者通过命令面板运行 `Open Equation Numbering control panel (Sidebar)`，可以打开右侧控制面板。
-- **按文档独立控制编号**：默认情况下每个 MD 文档不启用编号更新。
-  - 在控制面板中点击 **Enable Numbering** 开启或关闭（或者点击右下角状态栏的 **`🔢`** 按钮）。
-  - 开启时会立即自动对当前文档的公式进行首次编号。
-- **公式编号格式设置**：
-  - 在控制面板的 **Numbering Format** 下拉框中，您可以设置当前笔记的公式编号类型：
-    - `Default`：默认序号样式 `1`、`2`...
-    - `A-*`：带字母前缀 `A-1`、`A-2`...
-    - `2.*`：带小节点样式 `2.1`、`2.2`...
-    - `2-*`：带括号样式 `(2-1)`、`(2-2)`...
-    - `Custom...`：自定义输入格式，其中的 `*` 会被自动替换为公式序号。
-- **手动更新编号 (Update Number)**：
-  - 启用编号后，在右侧控制面板点击 **Update** 按钮（或运行 `Update Equation Numbers in current note` 命令），即可手动触发重新编号与文中引用更新。不会再根据打字频率自动更新。
-- **右下角状态栏图标**：
-  - 状态栏右下角只保留 `🔢` 图标。开启编号时图标完全显示，关闭编号时图标呈半透明灰色，可通过悬停查看状态或点击切换。
+---
 
-示例：
+## Features
 
-```markdown
-$$
-\hat{\boldsymbol{y}}_c = \boldsymbol{X}_c\hat{\boldsymbol{\beta}}
-$$
+- **Automatic Equation Numbering**: Scans and adds `\tag{n}` to display equations (`$$ ... $$`) inside your notes.
+- **Per-note Control**: Enable or disable equation numbering for specific notes.
+- **Custom Formatting**: Customize your numbering style (e.g., standard `1, 2`, prefixed `A-1, A-2`, dotted `2.1, 2.2`, parenthesized `(2-1), (2-2)`, or any custom pattern using `*`).
+- **Equation References Auto-Sync**: Detects LaTeX `\label{name}` inside your equations and updates markdown references (`[label](#name)`) automatically.
+- **De-duplication**: Reuses the same number for identical equations to keep math notation clean and consistent.
+- **No Side Effects**: Safely ignores inline equations (`$...$`) and code blocks (` ``` `).
+
+---
+
+## How to Use
+
+### 1. Activating the Plugin
+- Click the **Ordered List** icon on the ribbon, or run the command `Open Equation Numbering control panel (Sidebar)` to open the sidebar.
+- Click the status bar icon **`🔢`** in the bottom right corner of the window to toggle numbering for the active note on or off.
+
+### 2. Setting the Format
+In the sidebar control panel:
+- **Enable Numbering**: Turn numbering on for the current note.
+- **Numbering Format**: Select a format style:
+  - `Default`: `1`, `2`, `3`...
+  - `A-*`: `A-1`, `A-2`, `A-3`...
+  - `2.*`: `2.1`, `2.2`, `2.3`...
+  - `2-*`: `(2-1)`, `(2-2)`, `(2-3)`...
+  - `Custom...`: Type a custom pattern, where `*` will be replaced by the equation sequence number.
+
+### 3. Inserting Equation Labels and References
+To refer to an equation in your text:
+1. Put a `\label{label_name}` tag inside the display equation block:
+   ```markdown
+   $$
+   y_i = \beta_0 + \sum_{j=1}^p \beta_j x_{ij} + \varepsilon_i
+   \label{eq:linear-model}
+   $$
+   ```
+2. Reference it in your paragraph using a standard markdown link syntax with the `#` prefix:
+   - `[Equation ()](#eq:linear-model)` (recommended: empty parenthesis will be filled automatically)
+   - `[Eq (1)](#eq:linear-model)` (already filled, will be auto-updated)
+   - `[1](#eq:linear-model)` (simple link with number)
+
+### 4. Updating Numbers
+Once you modify equations or rearrange their order, click the **Update** button in the sidebar control panel, or run the command `Update Equation Numbers in current note`. The tags `\tag{...}` and all text references will be synchronized instantly.
+
+---
+
+## Installation
+
+### Manual Installation
+1. Clone or download this repository.
+2. In the repository folder, install dependencies and build the plugin:
+   ```bash
+   npm install
+   npm run build
+   ```
+3. Create a folder named `obsidian-auto-equation-numbering` under your vault's plugin directory: `<vault>/.obsidian/plugins/`.
+4. Copy `manifest.json` and `main.js` from the repository to that folder.
+5. Open Obsidian, go to **Settings > Community plugins**, reload, and enable **Auto Equation Numbering**.
+
+---
+
+## Development
+
+To build the plugin locally and auto-compile on changes:
+```bash
+npm run dev
 ```
 
-会被改写为：
+---
 
-```markdown
-$$
-\hat{\boldsymbol{y}}_c = \boldsymbol{X}_c\hat{\boldsymbol{\beta}}
-\tag{1}
-$$
-```
+## Important Notes
 
-同一篇笔记中第二次出现完全相同的公式时，会得到 `\tag{1}`；若删除首次出现的公式，剩余公式会在下一次自动扫描时成为该等价类的首次出现位置。
+- **Tag Management**: The plugin automatically manages `\tag{...}` in your display equations. Manually written tags will be overwritten when updating.
+- **Identical Equations**: Reusing numbers for duplicates is enabled by default. You can disable this in the plugin's global settings tab if you want unique numbers for every single equation block.
+- **Label Handling**: Labels `\label{...}` in the equation body are automatically prefixed with `%` (e.g., `% \label{...}`) to prevent MathJax rendering issues in Obsidian.
 
-## 公式引用自动更新
+---
 
-支持在文中的 Markdown 文本里动态引用公式编号并自动更新。
+<h2 id="简体中文">简体中文</h2>
 
-### 1. 声明公式标签
-在显示的公式块内部加入 LaTeX 标准的 `\label{label_name}` 标签，例如：
-```markdown
-$$
-y_i = \beta_0 + \sum_{j=1}^p \beta_j x_{ij} + \varepsilon_i
-\label{eq:mlr}
-$$
-```
+Obsidian 自动公式编号插件，用于为 Markdown 显示公式自动写入 `\tag{n}`，并自动同步文档中的公式引用。
 
-### 2. 在正文中引用
-在正文中使用标准的 Markdown 链接语法引用该标签，链接地址为 `#标签名`，例如：
-- `[式（2）](#eq:mlr)`
-- `[公式(2)](#eq:mlr)`
-- `[2](#eq:mlr)`
-- 支持使用空括号作为占位符，首次生成时会自动填充：`[式（）](#eq:mlr)`
+### 功能特点
 
-### 3. 自动更新效果
-当公式编号由于插入新公式或重新排列而发生改变（例如式（2）变为式（5））时，运行 **Update Equation Numbers**，正文中的所有引用链接如 `[式（2）](#eq:mlr)` 将会自动同步更新为 `[式（5）](#eq:mlr)`。
+- **自动公式编号**：识别 `$$ ... $$` 显示公式，自动在公式末尾添加 `\tag{n}`。不处理行内公式 `$...$`。
+- **单文档控制**：可针对每个笔记文档单独开启或关闭编号更新。
+- **丰富的编号格式**：支持多种内置格式（如 `1, 2`、`A-1, A-2`、`2.1, 2.2`、`(2-1), (2-2)`），并支持以 `*` 占位符自定义格式。
+- **公式引用同步**：支持识别 LaTeX `\label{name}` 并动态更新正文中的 Markdown 引用链接 `[式（）](#name)`。
+- **重复公式去重**：默认将完全相同的公式映射到同一个编号，使推导更一致。
+- **安全过滤**：自动忽略代码块（如 ` ``` `）中的公式，避免误伤。
 
-## 安装与构建
+### 使用方法
 
-1. 在此目录执行 `npm.cmd install`。
-2. 执行 `npm.cmd run build`，生成 `main.js`。
-3. 在 Vault 中创建 `.obsidian/plugins/auto-equation-numbering/`，并将构建产物
-   `manifest.json` 与 `main.js` 复制到该目录（无需复制 `node_modules`）。
-4. 在 Obsidian 的“社区插件”设置中启用 **Auto Equation Numbering**。
+1. **启用公式编号**
+   - 点击左侧 Ribbon 栏的“有序列表”图标，或在命令面板中运行 `Open Equation Numbering control panel (Sidebar)` 即可打开右侧控制面板。
+   - 也可以直接点击窗口右下角状态栏的 **`🔢`** 按钮，快速切换当前笔记的编号状态。
+2. **选择编号格式**
+   - 在控制面板的 **Numbering Format** 下拉菜单中选择适合的编号风格，或选择 `Custom...` 输入自定义模版（`*` 将被替换为公式序号）。
+3. **声明标签与正文引用**
+   - 在公式内部添加 `\label{your-label}`。
+   - 在正文中使用标准链接格式进行引用，如 `[公式()](#your-label)`。空括号会在生成时被自动填充。
+4. **手动更新**
+   - 调整公式位置或插入新公式后，在控制面板点击 **Update** 按钮，或执行 `Update Equation Numbers in current note` 命令，全文的公式 `\tag` 和引用链接便会同步更新。
 
-开发时执行 `npm.cmd run dev`；每次修改 TypeScript 后再次运行即可重新构建。
+### 手动安装
 
-## 注意
-
-- 插件会统一管理显示公式中的 `\tag{...}`，手工编号会被重写。
-- “完全相同”以移除 `\tag{...}` 后的 LaTeX 内容为准，连续空白差异会被忽略。
-- MathJax 的公式标签应放在 `$$ ... $$` 块内。对于复杂的 `aligned`、`cases` 等环境，插件会将标签放在显示公式结尾。
+1. 克隆或下载本仓库。
+2. 在仓库根目录下运行：
+   ```bash
+   npm install
+   npm run build
+   ```
+3. 在您的 Obsidian 库的 `.obsidian/plugins/` 目录下创建一个名为 `obsidian-auto-equation-numbering` 的新文件夹。
+4. 将编译生成的 `main.js` 和 `manifest.json` 复制到该文件夹中。
+5. 在 Obsidian 的“社区插件”设置中重新加载并启用 **Auto Equation Numbering**。
