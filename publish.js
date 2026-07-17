@@ -94,18 +94,60 @@ async function main() {
         if (!getReleaseResponse.ok) {
           throw new Error(`Failed to retrieve existing release: ${getReleaseData.message}`);
         }
+        await deleteExistingAssets(getReleaseData.id, token);
         await uploadAssets(getReleaseData.upload_url, token);
       } else {
         throw new Error(releaseData.message || 'Unknown error');
       }
     } else {
       console.log(`✅ Release created successfully: ${releaseData.html_url}`);
+      await deleteExistingAssets(releaseData.id, token);
       await uploadAssets(releaseData.upload_url, token);
     }
 
   } catch (err) {
     console.error('❌ Error during release creation:', err.message);
     process.exit(1);
+  }
+}
+
+async function deleteExistingAssets(releaseId, token) {
+  try {
+    console.log('🔍 Checking for existing assets to clean up...');
+    const response = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/releases/${releaseId}/assets`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'obsidian-publisher'
+      }
+    });
+    
+    if (!response.ok) {
+      console.warn('⚠️ Failed to fetch existing assets.');
+      return;
+    }
+    
+    const assets = await response.json();
+    for (const asset of assets) {
+      if (FILES_TO_UPLOAD.some(f => f.name === asset.name)) {
+        console.log(`🗑️ Deleting existing release asset: ${asset.name}...`);
+        const deleteResponse = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/releases/assets/${asset.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github+json',
+            'User-Agent': 'obsidian-publisher'
+          }
+        });
+        if (deleteResponse.ok) {
+          console.log(`  Deleted ${asset.name} successfully.`);
+        } else {
+          console.warn(`  ⚠️ Failed to delete asset ${asset.name}.`);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Error during asset cleanup:', err.message);
   }
 }
 
