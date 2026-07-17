@@ -6,7 +6,7 @@
 }
 
 .eqn-demo-title {
-    font-size: 1.3em;
+    font-size: 1.25em !important;
     font-weight: 600;
     margin-bottom: 8px;
     color: var(--text-normal);
@@ -22,8 +22,8 @@
     background-color: var(--background-secondary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 18px;
-    margin-bottom: 20px;
+    padding: 16px;
+    margin-bottom: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -34,7 +34,7 @@
 
 .eqn-demo-card-title {
     font-weight: 600;
-    font-size: 1.1em;
+    font-size: 1.05em;
     margin-bottom: 12px;
     display: flex;
     align-items: center;
@@ -54,12 +54,12 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: stretch;
-    gap: 16px;
+    gap: 12px;
     width: 100%;
 }
 
 .eqn-demo-step-box {
-    flex: 1 1 280px;
+    flex: 1 1 250px;
     background-color: var(--background-primary);
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -93,18 +93,18 @@
 }
 
 .eqn-demo-badge-before {
-    background-color: rgba(224, 86, 36, 0.15);
+    background-color: rgba(224, 86, 36, 0.12);
     color: #e05624;
 }
 
 .eqn-demo-badge-after {
-    background-color: rgba(46, 204, 113, 0.15);
+    background-color: rgba(46, 204, 113, 0.12);
     color: #2ecc71;
 }
 
 .eqn-demo-step-code {
     font-family: var(--font-monospace);
-    font-size: 0.9em;
+    font-size: 0.85em;
     white-space: pre-wrap;
     word-break: break-all;
     color: var(--text-normal);
@@ -118,11 +118,14 @@
     align-items: center;
     justify-content: center;
     color: var(--text-muted);
-    font-size: 1.5em;
+    font-size: 1.3em;
 }
 
 /* Horizontal vs Vertical arrow responsive helper */
 @media (max-width: 600px) {
+    .eqn-demo-step-wrapper {
+        flex-direction: column;
+    }
     .eqn-demo-arrow-box {
         transform: rotate(90deg);
         padding: 4px 0;
@@ -140,7 +143,7 @@
     color: var(--text-muted);
     background-color: rgba(var(--mono-rgb-100), 0.03);
     border-left: 3px solid var(--text-accent);
-    padding: 8px 12px;
+    padding: 6px 12px;
     margin-top: 12px;
     border-radius: 0 4px 4px 0;
 }
@@ -153,4 +156,24 @@
 .eqn-demo-green-highlight {
     color: #2ecc71;
     font-weight: 600;
+}
+
+/* Helper styles to replace static style assignments */
+.eqn-btn-disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+}
+
+.equation-numbering-status-bar {
+    cursor: pointer;
+}
+
+.equation-numbering-status-bar.is-active {
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+.equation-numbering-status-bar.is-inactive {
+    opacity: 0.4 !important;
+    filter: grayscale(100%) !important;
 }

@@ -127,7 +127,7 @@ function renumberText(
   const transformedRefs = partsForRefs.map((part, index) => {
     if (index % 2 === 1) return part;
 
-    return part.replace(/\[([^\]]*)\]\(#([^\)]+)\)/g, (match, displayText: string, labelKey: string) => {
+    return part.replace(/\[([^\]]*)\]\(#([^)]+)\)/g, (match, displayText: string, labelKey: string) => {
       const trimmedLabel = labelKey.trim();
       if (labelMap.has(trimmedLabel)) {
         const formattedNum = labelMap.get(trimmedLabel)!;
@@ -204,7 +204,7 @@ export class EquationNumberingView extends ItemView {
     container.addClass("equation-numbering-sidebar");
 
     // Header
-    const header = container.createEl("div", { cls: "setting-item setting-item-header" });
+    const header = container.createDiv({ cls: "setting-item setting-item-header" });
     const headerInfo = header.createDiv("setting-item-info");
     headerInfo.createEl("h4", { text: "Equation Numbering" });
 
@@ -212,8 +212,7 @@ export class EquationNumberingView extends ItemView {
     if (!view || !view.file) {
       container.createEl("p", { 
         text: "Open a markdown note to manage numbering.", 
-        cls: "setting-item-description", 
-        style: "padding: 18px;" 
+        cls: "setting-item-description"
       });
       return;
     }
@@ -233,9 +232,10 @@ export class EquationNumberingView extends ItemView {
       text: isEnabled ? "On" : "Off",
       cls: isEnabled ? "mod-cta" : ""
     });
-    toggleBtn.addEventListener("click", async () => {
-      await this.plugin.toggleNumberingForActiveFile();
-      this.updateView();
+    toggleBtn.addEventListener("click", () => {
+      this.plugin.toggleNumberingForActiveFile().then(() => {
+        this.updateView();
+      });
     });
 
     // Update Button Item
@@ -251,11 +251,10 @@ export class EquationNumberingView extends ItemView {
     });
     if (!isEnabled) {
       updateBtn.setAttribute("disabled", "true");
-      updateBtn.style.opacity = "0.5";
-      updateBtn.style.cursor = "not-allowed";
+      updateBtn.addClass("eqn-btn-disabled");
     }
-    updateBtn.addEventListener("click", async () => {
-      await this.plugin.updateNumberingForActiveFile();
+    updateBtn.addEventListener("click", () => {
+      void this.plugin.updateNumberingForActiveFile();
     });
 
     // Format Selector Item
@@ -290,7 +289,11 @@ export class EquationNumberingView extends ItemView {
 
     // Custom Input Container (rendered as setting item if selected)
     const customItem = container.createDiv("setting-item");
-    customItem.style.display = isCustom ? "flex" : "none";
+    if (isCustom) {
+      customItem.show();
+    } else {
+      customItem.hide();
+    }
     const customInfo = customItem.createDiv("setting-item-info");
     customInfo.createDiv({ cls: "setting-item-name", text: "Custom Pattern" });
     customInfo.createDiv({ cls: "setting-item-description", text: "Use * for the equation number" });
@@ -302,29 +305,35 @@ export class EquationNumberingView extends ItemView {
       style: "width: 100%;"
     });
 
-    formatSelect.addEventListener("change", async () => {
+    formatSelect.addEventListener("change", () => {
       const val = formatSelect.value;
-      if (val === "custom") {
-        customItem.style.display = "flex";
-        const customVal = customInput.value || "A-*";
-        await this.plugin.setFileFormat(path, customVal);
-      } else {
-        customItem.style.display = "none";
-        await this.plugin.setFileFormat(path, val);
-      }
-      if (isEnabled) {
-        await this.plugin.updateNumberingForActiveFile();
-      }
+      const run = async () => {
+        if (val === "custom") {
+          customItem.show();
+          const customVal = customInput.value || "A-*";
+          await this.plugin.setFileFormat(path, customVal);
+        } else {
+          customItem.hide();
+          await this.plugin.setFileFormat(path, val);
+        }
+        if (isEnabled) {
+          await this.plugin.updateNumberingForActiveFile();
+        }
+      };
+      void run();
     });
 
-    customInput.addEventListener("input", async () => {
-      await this.plugin.setFileFormat(path, customInput.value);
+    customInput.addEventListener("input", () => {
+      void this.plugin.setFileFormat(path, customInput.value);
     });
 
-    customInput.addEventListener("change", async () => {
-      if (isEnabled) {
-        await this.plugin.updateNumberingForActiveFile();
-      }
+    customInput.addEventListener("change", () => {
+      const run = async () => {
+        if (isEnabled) {
+          await this.plugin.updateNumberingForActiveFile();
+        }
+      };
+      void run();
     });
 
     // Reuse duplicate equations toggle
@@ -467,12 +476,10 @@ export default class AutoEquationNumberingPlugin extends Plugin {
   }
 
   onunload(): void {
-    // Clean up views from workspace dock
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_EQUATION_NUMBERING);
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<EquationNumberingSettings>);
     if (!this.settings.enabledFiles) {
       this.settings.enabledFiles = {};
     }
@@ -583,25 +590,24 @@ export default class AutoEquationNumberingPlugin extends Plugin {
     const view = this.getActiveMarkdownView();
     if (!view || !view.file) {
       this.statusBarItem.setText("");
-      this.statusBarItem.style.display = "none";
+      this.statusBarItem.hide();
       return;
     }
-    this.statusBarItem.style.display = "";
+    this.statusBarItem.show();
     const path = view.file.path;
     const fileSettings = this.getFileSettings(path);
     const isEnabled = fileSettings.enabled;
     
     // Only display the icon
     this.statusBarItem.setText("🔢");
-    this.statusBarItem.style.cursor = "pointer";
     
     if (isEnabled) {
-      this.statusBarItem.style.opacity = "1";
-      this.statusBarItem.style.filter = "none";
+      this.statusBarItem.addClass("is-active");
+      this.statusBarItem.removeClass("is-inactive");
       this.statusBarItem.setAttribute("title", "Equation numbering is enabled (Click to disable)");
     } else {
-      this.statusBarItem.style.opacity = "0.4";
-      this.statusBarItem.style.filter = "grayscale(100%)";
+      this.statusBarItem.addClass("is-inactive");
+      this.statusBarItem.removeClass("is-active");
       this.statusBarItem.setAttribute("title", "Equation numbering is disabled (Click to enable)");
     }
   }
@@ -675,7 +681,7 @@ export default class AutoEquationNumberingPlugin extends Plugin {
       });
     }
     
-    workspace.revealLeaf(leaf);
+    await workspace.revealLeaf(leaf);
     if (this.sidebarView) {
       this.sidebarView.updateView();
     }
@@ -691,137 +697,22 @@ class EquationNumberingSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h3", { text: "Equation Numbering Settings" });
+    new Setting(containerEl)
+      .setName("Equation Numbering Settings")
+      .setHeading();
+
     containerEl.createEl("p", {
       text: "Equation numbering is manual and managed per-document. Toggle numbering or change formatting in the right sidebar control panel.",
     });
 
-    // Custom CSS injection
-    const styleEl = containerEl.createEl("style");
-    styleEl.textContent = `
-      .eqn-demo-container {
-        margin-top: 24px;
-        border-top: 1px solid var(--border-color);
-        padding-top: 24px;
-      }
-      .eqn-demo-title {
-        font-size: 1.25em;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: var(--text-normal);
-      }
-      .eqn-demo-subtitle {
-        font-size: 0.9em;
-        color: var(--text-muted);
-        margin-bottom: 20px;
-      }
-      .eqn-demo-card {
-        background-color: var(--background-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-      }
-      .eqn-demo-card-title {
-        font-weight: 600;
-        font-size: 1.05em;
-        margin-bottom: 12px;
-        color: var(--text-accent);
-      }
-      .eqn-demo-step-wrapper {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: stretch;
-        gap: 12px;
-        width: 100%;
-      }
-      .eqn-demo-step-box {
-        flex: 1 1 250px;
-        background-color: var(--background-primary);
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        padding: 12px;
-        display: flex;
-        flex-direction: column;
-      }
-      .eqn-demo-step-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-        padding-bottom: 6px;
-        border-bottom: 1px dashed var(--border-color);
-      }
-      .eqn-demo-step-label {
-        font-size: 0.8em;
-        font-weight: 600;
-        text-transform: uppercase;
-        color: var(--text-muted);
-      }
-      .eqn-demo-badge {
-        font-size: 0.75em;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: 600;
-      }
-      .eqn-demo-badge-before {
-        background-color: rgba(224, 86, 36, 0.12);
-        color: #e05624;
-      }
-      .eqn-demo-badge-after {
-        background-color: rgba(46, 204, 113, 0.12);
-        color: #2ecc71;
-      }
-      .eqn-demo-step-code {
-        font-family: var(--font-monospace);
-        font-size: 0.85em;
-        white-space: pre-wrap;
-        word-break: break-all;
-        color: var(--text-normal);
-        margin: 0;
-        line-height: 1.4;
-        flex-grow: 1;
-      }
-      .eqn-demo-arrow-box {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-muted);
-        font-size: 1.3em;
-      }
-      @media (max-width: 600px) {
-        .eqn-demo-step-wrapper {
-          flex-direction: column;
-        }
-        .eqn-demo-arrow-box {
-          transform: rotate(90deg);
-          padding: 4px 0;
-        }
-      }
-      .eqn-demo-tip {
-        font-size: 0.85em;
-        color: var(--text-muted);
-        border-left: 3px solid var(--text-accent);
-        padding: 6px 12px;
-        margin-top: 12px;
-        background-color: rgba(255, 255, 255, 0.03);
-        border-radius: 0 4px 4px 0;
-      }
-      .eqn-demo-highlight {
-        color: var(--text-accent);
-        font-weight: 600;
-      }
-      .eqn-demo-green-highlight {
-        color: #2ecc71;
-        font-weight: 600;
-      }
-    `;
-
     // Demo Container
     const demoContainer = containerEl.createDiv({ cls: "eqn-demo-container" });
-    demoContainer.createEl("h3", { text: "🎬 效果演示 (Effect Demonstration)", cls: "eqn-demo-title" });
+    
+    const headingSetting = new Setting(demoContainer)
+      .setName("🎬 效果演示 (Effect Demonstration)")
+      .setHeading();
+    headingSetting.settingEl.addClass("eqn-demo-title");
+
     demoContainer.createEl("p", { 
       text: "了解 Auto Equation Numbering 的核心工作流与效果", 
       cls: "eqn-demo-subtitle" 
