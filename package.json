@@ -1,6 +1,6 @@
 {
   "name": "obsidian-auto-equation-numbering",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "An Obsidian plugin for automatic display-equation numbering.",
   "main": "main.js",
   "scripts": {
