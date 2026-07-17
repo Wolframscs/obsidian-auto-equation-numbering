@@ -695,5 +695,208 @@ class EquationNumberingSettingTab extends PluginSettingTab {
     containerEl.createEl("p", {
       text: "Equation numbering is manual and managed per-document. Toggle numbering or change formatting in the right sidebar control panel.",
     });
+
+    // Custom CSS injection
+    const styleEl = containerEl.createEl("style");
+    styleEl.textContent = `
+      .eqn-demo-container {
+        margin-top: 24px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 24px;
+      }
+      .eqn-demo-title {
+        font-size: 1.25em;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-normal);
+      }
+      .eqn-demo-subtitle {
+        font-size: 0.9em;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+      }
+      .eqn-demo-card {
+        background-color: var(--background-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+      .eqn-demo-card-title {
+        font-weight: 600;
+        font-size: 1.05em;
+        margin-bottom: 12px;
+        color: var(--text-accent);
+      }
+      .eqn-demo-step-wrapper {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 12px;
+        width: 100%;
+      }
+      .eqn-demo-step-box {
+        flex: 1 1 250px;
+        background-color: var(--background-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+      }
+      .eqn-demo-step-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px dashed var(--border-color);
+      }
+      .eqn-demo-step-label {
+        font-size: 0.8em;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+      .eqn-demo-badge {
+        font-size: 0.75em;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+      .eqn-demo-badge-before {
+        background-color: rgba(224, 86, 36, 0.12);
+        color: #e05624;
+      }
+      .eqn-demo-badge-after {
+        background-color: rgba(46, 204, 113, 0.12);
+        color: #2ecc71;
+      }
+      .eqn-demo-step-code {
+        font-family: var(--font-monospace);
+        font-size: 0.85em;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: var(--text-normal);
+        margin: 0;
+        line-height: 1.4;
+        flex-grow: 1;
+      }
+      .eqn-demo-arrow-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-size: 1.3em;
+      }
+      @media (max-width: 600px) {
+        .eqn-demo-step-wrapper {
+          flex-direction: column;
+        }
+        .eqn-demo-arrow-box {
+          transform: rotate(90deg);
+          padding: 4px 0;
+        }
+      }
+      .eqn-demo-tip {
+        font-size: 0.85em;
+        color: var(--text-muted);
+        border-left: 3px solid var(--text-accent);
+        padding: 6px 12px;
+        margin-top: 12px;
+        background-color: rgba(255, 255, 255, 0.03);
+        border-radius: 0 4px 4px 0;
+      }
+      .eqn-demo-highlight {
+        color: var(--text-accent);
+        font-weight: 600;
+      }
+      .eqn-demo-green-highlight {
+        color: #2ecc71;
+        font-weight: 600;
+      }
+    `;
+
+    // Demo Container
+    const demoContainer = containerEl.createDiv({ cls: "eqn-demo-container" });
+    demoContainer.createEl("h3", { text: "🎬 效果演示 (Effect Demonstration)", cls: "eqn-demo-title" });
+    demoContainer.createEl("p", { 
+      text: "了解 Auto Equation Numbering 的核心工作流与效果", 
+      cls: "eqn-demo-subtitle" 
+    });
+
+    // Card 1: 公式自动追加 Tag
+    const card1 = demoContainer.createDiv({ cls: "eqn-demo-card" });
+    card1.createDiv({ cls: "eqn-demo-card-title", text: "1. 公式自动追加 Tag" });
+    
+    const wrapper1 = card1.createDiv({ cls: "eqn-demo-step-wrapper" });
+    
+    // Original block 1
+    const originalBox1 = wrapper1.createDiv({ cls: "eqn-demo-step-box" });
+    const originalHeader1 = originalBox1.createDiv({ cls: "eqn-demo-step-header" });
+    originalHeader1.createDiv({ cls: "eqn-demo-step-label", text: "原始文本" });
+    originalHeader1.createDiv({ cls: "eqn-demo-badge eqn-demo-badge-before", text: "BEFORE" });
+    originalBox1.createEl("pre", { 
+      cls: "eqn-demo-step-code", 
+      text: "$$\n\\hat{\\boldsymbol{y}}_c = \\boldsymbol{X}_c\\hat{\\boldsymbol{\\beta}}\n$$" 
+    });
+
+    // Arrow 1
+    const arrowBox1 = wrapper1.createDiv({ cls: "eqn-demo-arrow-box" });
+    arrowBox1.createDiv({ cls: "eqn-demo-arrow-icon", text: "➡️" });
+
+    // Updated block 1
+    const updatedBox1 = wrapper1.createDiv({ cls: "eqn-demo-step-box" });
+    const updatedHeader1 = updatedBox1.createDiv({ cls: "eqn-demo-step-header" });
+    updatedHeader1.createDiv({ cls: "eqn-demo-step-label", text: "自动更新后" });
+    updatedHeader1.createDiv({ cls: "eqn-demo-badge eqn-demo-badge-after", text: "AFTER" });
+    
+    const codeEl1 = updatedBox1.createEl("pre", { cls: "eqn-demo-step-code" });
+    codeEl1.createSpan({ text: "$$\n\\hat{\\boldsymbol{y}}_c = \\boldsymbol{X}_c\\hat{\\boldsymbol{\\beta}}\n" });
+    codeEl1.createSpan({ text: "\\tag{1}", cls: "eqn-demo-green-highlight" });
+    codeEl1.createSpan({ text: "\n$$" });
+
+    // Card 2: 交叉引用同步
+    const card2 = demoContainer.createDiv({ cls: "eqn-demo-card" });
+    card2.createDiv({ cls: "eqn-demo-card-title", text: "2. 交叉引用同步" });
+    
+    const wrapper2 = card2.createDiv({ cls: "eqn-demo-step-wrapper" });
+    
+    // Original block 2
+    const originalBox2 = wrapper2.createDiv({ cls: "eqn-demo-step-box" });
+    const originalHeader2 = originalBox2.createDiv({ cls: "eqn-demo-step-header" });
+    originalHeader2.createDiv({ cls: "eqn-demo-step-label", text: "编辑中" });
+    originalHeader2.createDiv({ cls: "eqn-demo-badge eqn-demo-badge-before", text: "BEFORE" });
+    originalBox2.createEl("pre", { 
+      cls: "eqn-demo-step-code", 
+      text: "$$\ny_i = \\beta_0 + \\sum_{j=1}^p \\beta_j x_{ij} + \\varepsilon_i\n\\label{eq:mlr}\n$$\n\n如[式（）](#eq:mlr)所示，我们建立了多元线性回归模型。" 
+    });
+
+    // Arrow 2
+    const arrowBox2 = wrapper2.createDiv({ cls: "eqn-demo-arrow-box" });
+    arrowBox2.createDiv({ cls: "eqn-demo-arrow-icon", text: "➡️" });
+
+    // Updated block 2
+    const updatedBox2 = wrapper2.createDiv({ cls: "eqn-demo-step-box" });
+    const updatedHeader2 = updatedBox2.createDiv({ cls: "eqn-demo-step-header" });
+    updatedHeader2.createDiv({ cls: "eqn-demo-step-label", text: "更新后" });
+    updatedHeader2.createDiv({ cls: "eqn-demo-badge eqn-demo-badge-after", text: "AFTER" });
+    
+    const codeEl2 = updatedBox2.createEl("pre", { cls: "eqn-demo-step-code" });
+    codeEl2.createSpan({ text: "$$\ny_i = \\beta_0 + \\sum_{j=1}^p \\beta_j x_{ij} + \\varepsilon_i\n% \\label{eq:mlr}\n" });
+    codeEl2.createSpan({ text: "\\tag{1}", cls: "eqn-demo-green-highlight" });
+    codeEl2.createSpan({ text: "\n$$\n\n如" });
+    codeEl2.createSpan({ text: "[式（1）](#eq:mlr)", cls: "eqn-demo-green-highlight" });
+    codeEl2.createSpan({ text: "所示，我们建立了多元线性回归模型。" });
+
+    const tipBox2 = card2.createDiv({ cls: "eqn-demo-tip" });
+    tipBox2.createSpan({ text: "💡 提示：", cls: "eqn-demo-highlight" });
+    tipBox2.createSpan({ text: "若在当前公式前插入其他公式导致其编号变为 " });
+    tipBox2.createSpan({ text: "2", cls: "eqn-demo-highlight" });
+    tipBox2.createSpan({ text: "，再次触发更新后，正文中的引用链接将自动同步更新为：" });
+    tipBox2.createEl("code", { text: "[式（2）](#eq:mlr)" });
+    tipBox2.createSpan({ text: "。" });
   }
 }
