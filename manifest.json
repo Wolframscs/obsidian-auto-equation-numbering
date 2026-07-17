@@ -1,7 +1,7 @@
 {
   "id": "auto-equation-numbering",
   "name": "Auto Equation Numbering",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "1.5.11",
   "description": "Manually toggle and update display-equation numbering per document, and reuse the first number for duplicate equations.",
   "author": "Local",
