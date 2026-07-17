@@ -233,9 +233,13 @@ export class EquationNumberingView extends ItemView {
       cls: isEnabled ? "mod-cta" : ""
     });
     toggleBtn.addEventListener("click", () => {
-      this.plugin.toggleNumberingForActiveFile().then(() => {
-        this.updateView();
-      });
+      this.plugin.toggleNumberingForActiveFile()
+        .then(() => {
+          this.updateView();
+        })
+        .catch((err) => {
+          console.error("Failed to toggle numbering:", err);
+        });
     });
 
     // Update Button Item
@@ -374,11 +378,16 @@ export default class AutoEquationNumberingPlugin extends Plugin {
     // Create status bar item
     this.statusBarItem = this.addStatusBarItem();
     this.statusBarItem.addClass("equation-numbering-status-bar");
-    this.statusBarItem.addEventListener("click", async () => {
-      await this.toggleNumberingForActiveFile();
-      if (this.sidebarView) {
-        this.sidebarView.updateView();
-      }
+    this.statusBarItem.addEventListener("click", () => {
+      this.toggleNumberingForActiveFile()
+        .then(() => {
+          if (this.sidebarView) {
+            this.sidebarView.updateView();
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to toggle numbering from status bar:", err);
+        });
     });
 
     // Ribbon Icon to Toggle Right Sidebar
@@ -693,17 +702,151 @@ class EquationNumberingSettingTab extends PluginSettingTab {
     super(app, plugin);
   }
 
+  getSettingDefinitions(): any[] {
+    return [
+      {
+        name: "Reuse first number for duplicate equations",
+        desc: "When enabled, identical display equations in one note receive the number of their first occurrence.",
+        control: {
+          key: "reuseNumberForDuplicates",
+          type: "toggle",
+          defaultValue: true
+        }
+      },
+      {
+        name: "Effect Demonstration",
+        type: "render",
+        render: (setting: Setting) => {
+          setting.infoEl.empty();
+          setting.controlEl.empty();
+          
+          const container = setting.settingEl;
+          container.addClass("eqn-setting-render-container");
+          
+          container.createEl("p", {
+            text: "Equation numbering is manual and managed per-document. Toggle numbering or change formatting in the right sidebar control panel.",
+            cls: "eqn-setting-desc-text"
+          });
+
+          // Demo Container
+          const demoContainer = container.createDiv({ cls: "eqn-demo-container" });
+          
+          const headingSetting = new Setting(demoContainer)
+            .setName("🎬 效果演示 (Effect Demonstration)")
+            .setHeading();
+          headingSetting.settingEl.addClass("eqn-demo-title");
+
+          demoContainer.createEl("p", { 
+            text: "了解 Auto Equation Numbering 的核心工作流与效果", 
+            cls: "eqn-demo-subtitle" 
+          });
+
+          // Card 1: 公式自动追加 Tag
+          const card1 = demoContainer.createDiv({ cls: "eqn-demo-card" });
+          card1.createDiv({ cls: "eqn-demo-card-title", text: "1. 公式自动追加 Tag" });
+          
+          const wrapper1 = card1.createDiv({ cls: "eqn-demo-step-wrapper" });
+          
+          // Original block 1
+          const originalBox1 = wrapper1.createDiv({ cls: "eqn-demo-step-box" });
+          const originalHeader1 = originalBox1.createDiv({ cls: "eqn-demo-step-header" });
+          originalHeader1.createDiv({ cls: "eqn-demo-step-label", text: "原始文本" });
+          originalHeader1.createDiv({ cls: "eqn-demo-badge eqn-demo-badge-before", text: "BEFORE" });
+          originalBox1.createEl("pre", { 
+            cls: "eqn-demo-step-code", 
+            text: "$$\n\\hat{\\boldsymbol{y}}_c = \\boldsymbol{X}_c\\hat{\\boldsymbol{\\beta}}\n$$" 
+          });
+
+          // Arrow 1
+          const arrowBox1 = wrapper1.createDiv({ cls: "eqn-demo-arrow-box" });
+          arrowBox1.createDiv({ cls: "eqn-demo-arrow-icon", text: "➡️" });
+
+          // Updated block 1
+          const updatedBox1 = wrapper1.createDiv({ cls: "eqn-demo-step-box" });
+          const updatedHeader1 = updatedBox1.createDiv({ cls: "eqn-demo-step-header" });
+          updatedHeader1.createDiv({ cls: "eqn-demo-step-label", text: "自动更新后" });
+          updatedHeader1.createDiv({ cls: "eqn-demo-badge eqn-demo-badge-after", text: "AFTER" });
+          
+          const codeEl1 = updatedBox1.createEl("pre", { cls: "eqn-demo-step-code" });
+          codeEl1.createSpan({ text: "$$\n\\hat{\\boldsymbol{y}}_c = \\boldsymbol{X}_c\\hat{\\boldsymbol{\\beta}}\n" });
+          codeEl1.createSpan({ text: "\\tag{1}", cls: "eqn-demo-green-highlight" });
+          codeEl1.createSpan({ text: "\n$$" });
+
+          // Card 2: 交叉引用同步
+          const card2 = demoContainer.createDiv({ cls: "eqn-demo-card" });
+          card2.createDiv({ cls: "eqn-demo-card-title", text: "2. 交叉引用同步" });
+          
+          const wrapper2 = card2.createDiv({ cls: "eqn-demo-step-wrapper" });
+          
+          // Original block 2
+          const originalBox2 = wrapper2.createDiv({ cls: "eqn-demo-step-box" });
+          const originalHeader2 = originalBox2.createDiv({ cls: "eqn-demo-step-header" });
+          originalHeader2.createDiv({ cls: "eqn-demo-step-label", text: "编辑中" });
+          originalHeader2.createDiv({ cls: "eqn-demo-badge eqn-demo-badge-before", text: "BEFORE" });
+          originalBox2.createEl("pre", { 
+            cls: "eqn-demo-step-code", 
+            text: "$$\ny_i = \\beta_0 + \\sum_{j=1}^p \\beta_j x_{ij} + \\varepsilon_i\n\\label{eq:mlr}\n$$\n\n如[式（）](#eq:mlr)所示，我们建立了多元线性回归模型。" 
+          });
+
+          // Arrow 2
+          const arrowBox2 = wrapper2.createDiv({ cls: "eqn-demo-arrow-box" });
+          arrowBox2.createDiv({ cls: "eqn-demo-arrow-icon", text: "➡️" });
+
+          // Updated block 2
+          const updatedBox2 = wrapper2.createDiv({ cls: "eqn-demo-step-box" });
+          const updatedHeader2 = updatedBox2.createDiv({ cls: "eqn-demo-step-header" });
+          updatedHeader2.createDiv({ cls: "eqn-demo-step-label", text: "更新后" });
+          updatedHeader2.createDiv({ cls: "eqn-demo-badge eqn-demo-badge-after", text: "AFTER" });
+          
+          const codeEl2 = updatedBox2.createEl("pre", { cls: "eqn-demo-step-code" });
+          codeEl2.createSpan({ text: "$$\ny_i = \\beta_0 + \\sum_{j=1}^p \\beta_j x_{ij} + \\varepsilon_i\n% \\label{eq:mlr}\n" });
+          codeEl2.createSpan({ text: "\\tag{1}", cls: "eqn-demo-green-highlight" });
+          codeEl2.createSpan({ text: "\n$$\n\n如" });
+          codeEl2.createSpan({ text: "[式（1）](#eq:mlr)", cls: "eqn-demo-green-highlight" });
+          codeEl2.createSpan({ text: "所示，我们建立了多元线性回归模型。" });
+
+          const tipBox2 = card2.createDiv({ cls: "eqn-demo-tip" });
+          tipBox2.createSpan({ text: "💡 提示：", cls: "eqn-demo-highlight" });
+          tipBox2.createSpan({ text: "若在当前公式前插入其他公式导致其编号变为 " });
+          tipBox2.createSpan({ text: "2", cls: "eqn-demo-highlight" });
+          tipBox2.createSpan({ text: "，再次触发更新后，正文中的引用链接将自动同步更新为：" });
+          tipBox2.createEl("code", { text: "[式（2）](#eq:mlr)" });
+          tipBox2.createSpan({ text: "。" });
+        }
+      }
+    ];
+  }
+
+  override async setControlValue(key: string, value: unknown): Promise<void> {
+    if (key === "reuseNumberForDuplicates") {
+      this.plugin.settings.reuseNumberForDuplicates = value as boolean;
+      await this.plugin.saveSettings();
+    }
+  }
+
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
 
     new Setting(containerEl)
-      .setName("Equation Numbering Settings")
+      .setName("Equation Numbering")
       .setHeading();
 
     containerEl.createEl("p", {
       text: "Equation numbering is manual and managed per-document. Toggle numbering or change formatting in the right sidebar control panel.",
     });
+
+    new Setting(containerEl)
+      .setName("Reuse first number for duplicate equations")
+      .setDesc("When enabled, identical display equations in one note receive the number of their first occurrence.")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.reuseNumberForDuplicates)
+          .onChange(async (value) => {
+            this.plugin.settings.reuseNumberForDuplicates = value;
+            await this.plugin.saveSettings();
+          })
+      );
 
     // Demo Container
     const demoContainer = containerEl.createDiv({ cls: "eqn-demo-container" });

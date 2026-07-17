@@ -5,8 +5,9 @@
     padding-top: 24px;
 }
 
-.eqn-demo-title {
-    font-size: 1.25em !important;
+.eqn-demo-container .setting-item.eqn-demo-title,
+.setting-item-heading.eqn-demo-title {
+    font-size: 1.25em;
     font-weight: 600;
     margin-bottom: 8px;
     color: var(--text-normal);
@@ -159,21 +160,24 @@
 }
 
 /* Helper styles to replace static style assignments */
-.eqn-btn-disabled {
-    opacity: 0.5 !important;
-    cursor: not-allowed !important;
+button.eqn-btn-disabled,
+.setting-item-control button.eqn-btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .equation-numbering-status-bar {
     cursor: pointer;
 }
 
-.equation-numbering-status-bar.is-active {
-    opacity: 1 !important;
-    filter: none !important;
+.status-bar .equation-numbering-status-bar.is-active,
+.status-bar-item.equation-numbering-status-bar.is-active {
+    opacity: 1;
+    filter: none;
 }
 
-.equation-numbering-status-bar.is-inactive {
-    opacity: 0.4 !important;
-    filter: grayscale(100%) !important;
+.status-bar .equation-numbering-status-bar.is-inactive,
+.status-bar-item.equation-numbering-status-bar.is-inactive {
+    opacity: 0.4;
+    filter: grayscale(100%);
 }
