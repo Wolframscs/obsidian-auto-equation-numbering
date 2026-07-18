@@ -58,10 +58,15 @@ Customize equation numbering styles globally or per-note to match different docu
 - **Reuse Numbers**: If multiple identical equations are detected within the same note, the plugin reuses the same number by default to maintain derivation consistency.
 - **Independent Numbering**: This can be turned off in the settings, allowing each equation to be numbered sequentially even if they are identical.
 
-##### 5. Convenient Control Panels
+##### 5. Convenient Control Panels & Shortcut Buttons
 
-- **Sidebar Control Panel**: Open the sidebar panel via the ribbon icon or the command `Open Equation Numbering control panel (Sidebar)`. Toggle numbering, change format, or manually update equation numbers for the active note.
+- **Redesigned Sidebar Control Panel**: A modernized sidebar featuring a custom math logo, simplified settings controls (Format, Repeat Recognition), and a prominent full-width "Update" CTA button. Open it via the ribbon icon or command palette.
+- **Editor Header Shortcut Button (UpNum)**: An action button (using the list-ordered icon) is added directly to the top-right view header of active notes. It allows you to trigger updates instantly on the fly without having the sidebar open. It dynamically hides on notes that don't have equation numbering enabled.
 - **Status Bar Toggle**: Click the `🔢` icon in the bottom-right status bar to quickly toggle auto-numbering on or off for the active note.
+
+##### 6. Diff-Range Performance Optimization
+
+- **Instant Updates**: The plugin calculates the minimal changed character block and updates the editor using `editor.replaceRange()` instead of replacing the entire file text. This prevents full-page MathJax/KaTeX re-renders and eliminates UI lag or freezing, even in extremely large notes.
 
 | Sidebar Control Panel | Status Bar Switch |
 | :---: | :---: |
@@ -208,10 +213,15 @@ npm run dev
 - **复用编号**：如果检测到同一篇笔记中存在多个完全相同的公式，默认会复用相同的公式编号，以保证推导的一致性。
 - **独立编号**：该机制可在设置中随时关闭。关闭后，每个公式都将获得独立递增的编号。
 
-##### 5. 便捷的交互控制面板
+##### 5. 便捷的交互面板与快捷按钮
 
-- **侧边控制面板**：点击侧边栏图标或运行 `Open Equation Numbering control panel (Sidebar)` 快速打开侧边栏，支持针对当前笔记启用/禁用编号、切换格式及手动触发更新。
+- **全新设计的侧边控制面板**：拥有精美的数学公式 Logo、精简的设置选项、以及醒目的通栏（Full-width）“Update”更新按钮，更加美观易用。可点击侧边栏图标或通过命令栏打开。
+- **编辑器头部快捷按钮 (UpNum)**：直接在开启了公式编号的笔记右上角（视图操作栏）生成一个快捷更新按钮。您无需打开侧边栏，在编辑过程中直接点击右上角即可瞬间完成更新。在未开启公式编号的笔记中，该按钮会自动隐藏。
 - **状态栏快捷切换**：窗口右下角提供 `🔢` 状态指示与快捷开关，随时切换当前笔记的自动编号状态。
+
+##### 6. 差分更新（Diff-Range）性能优化
+
+- **瞬时更新不卡顿**：采用差分算法计算文本的最小变化范围，仅通过 `editor.replaceRange()` 进行局部替换，而不是粗暴地覆盖全文。这避免了整个文档的 MathJax/KaTeX 公式完全重新排版，彻底解决了大文档点击更新时的界面卡死和卡顿问题。
 
 | 侧边控制面板 | 状态栏快捷切换 |
 | :---: | :---: |
