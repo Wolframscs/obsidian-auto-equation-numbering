@@ -168,6 +168,26 @@ function renumberText(
   };
 }
 
+function getDiffRange(a: string, b: string): { from: number; to: number; text: string } | null {
+  if (a === b) return null;
+  let start = 0;
+  const minLen = Math.min(a.length, b.length);
+  while (start < minLen && a.charCodeAt(start) === b.charCodeAt(start)) {
+    start++;
+  }
+  let endA = a.length - 1;
+  let endB = b.length - 1;
+  while (endA >= start && endB >= start && a.charCodeAt(endA) === b.charCodeAt(endB)) {
+    endA--;
+    endB--;
+  }
+  return {
+    from: start,
+    to: endA + 1,
+    text: b.substring(start, endB + 1)
+  };
+}
+
 export const VIEW_TYPE_EQUATION_NUMBERING = "equation-numbering-view";
 
 export class EquationNumberingView extends ItemView {
@@ -203,16 +223,40 @@ export class EquationNumberingView extends ItemView {
     container.empty();
     container.addClass("equation-numbering-sidebar");
 
-    // Header
-    const header = container.createDiv({ cls: "setting-item setting-item-header" });
-    const headerInfo = header.createDiv("setting-item-info");
-    headerInfo.createEl("h4", { text: "Equation Numbering" });
+    // Header container (centered)
+    const headerContainer = container.createDiv({ cls: "eqn-sidebar-header-container" });
+    
+    // Custom math logo (SVG)
+    headerContainer.createEl("div", {
+      cls: "eqn-sidebar-logo-wrapper"
+    }).innerHTML = `
+      <svg viewBox="0 0 64 64" width="64" height="64" class="eqn-sidebar-logo">
+        <rect width="64" height="64" rx="16" fill="#1e2238"/>
+        <g stroke-linecap="round" fill="none">
+          <line x1="18" y1="22" x2="28" y2="22" stroke="#5c638c" stroke-width="3"/>
+          <line x1="18" y1="32" x2="24" y2="32" stroke="#5c638c" stroke-width="3"/>
+          <line x1="18" y1="42" x2="28" y2="42" stroke="#5c638c" stroke-width="3"/>
+          <path d="M44,18 C39,18 36,24 36,32 C36,40 33,46 29,46 M32,32 L44,32" stroke="#7f8ffc" stroke-width="3.5"/>
+          <circle cx="45" cy="24" r="1.5" fill="#7f8ffc" stroke="none"/>
+        </g>
+      </svg>
+    `;
+
+    // Title and Subtitle
+    headerContainer.createEl("div", { 
+      cls: "eqn-sidebar-title", 
+      text: "Equation Numbering" 
+    });
+    headerContainer.createEl("div", { 
+      cls: "eqn-sidebar-subtitle", 
+      text: "公式管理 (Side Panel)" 
+    });
 
     const view = this.plugin.getActiveMarkdownView();
     if (!view || !view.file) {
       container.createEl("p", { 
         text: "Open a markdown note to manage numbering.", 
-        cls: "setting-item-description"
+        cls: "setting-item-description eqn-centered-description"
       });
       return;
     }
@@ -221,37 +265,94 @@ export class EquationNumberingView extends ItemView {
     const fileSettings = this.plugin.getFileSettings(path);
     const isEnabled = fileSettings.enabled;
 
-    // Toggle Item
-    const toggleItem = container.createDiv("setting-item");
-    const toggleInfo = toggleItem.createDiv("setting-item-info");
-    toggleInfo.createDiv({ cls: "setting-item-name", text: "Enable Numbering" });
-    toggleInfo.createDiv({ cls: "setting-item-description", text: "Toggle numbering for this note" });
-    
-    const toggleControl = toggleItem.createDiv("setting-item-control");
-    const toggleBtn = toggleControl.createEl("button", {
-      text: isEnabled ? "On" : "Off",
-      cls: isEnabled ? "mod-cta" : ""
-    });
-    toggleBtn.addEventListener("click", () => {
-      this.plugin.toggleNumberingForActiveFile()
-        .then(() => {
-          this.updateView();
-        })
-        .catch((err) => {
-          console.error("Failed to toggle numbering:", err);
+    // Divider
+    container.createDiv({ cls: "eqn-sidebar-divider" });
+
+    // Enable for this Note Toggle
+    const enableSetting = new Setting(container)
+      .setName("Enable for this Note")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(isEnabled)
+          .onChange(async (value) => {
+            await this.plugin.toggleNumberingForActiveFile();
+            this.updateView();
+          })
+      );
+    enableSetting.settingEl.addClass("eqn-sidebar-setting-item");
+
+    // Divider
+    container.createDiv({ cls: "eqn-sidebar-divider" });
+
+    // Format Dropdown Selector
+    let customSetting: Setting;
+    let customInputEl: HTMLInputElement;
+
+    const formatSetting = new Setting(container)
+      .setName("Format")
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption("default", "(n)")
+          .addOption("A-*", "A-n")
+          .addOption("2.*", "2.n")
+          .addOption("2-*", "(2-n)")
+          .addOption("custom", "custom");
+
+        const currentFormat = fileSettings.format || "default";
+        const options = ["default", "A-*", "2.*", "2-*", "custom"];
+        const isCustom = !options.includes(currentFormat);
+        dropdown.setValue(isCustom ? "custom" : currentFormat);
+
+        dropdown.onChange(async (val) => {
+          if (val === "custom") {
+            if (customSetting) customSetting.settingEl.show();
+            const customVal = customInputEl ? customInputEl.value : "A-*";
+            await this.plugin.setFileFormat(path, customVal);
+          } else {
+            if (customSetting) customSetting.settingEl.hide();
+            await this.plugin.setFileFormat(path, val);
+          }
+          if (isEnabled) {
+            await this.plugin.updateNumberingForActiveFile();
+          }
         });
-    });
+      });
+    formatSetting.settingEl.addClass("eqn-sidebar-setting-item");
 
-    // Update Button Item
-    const updateItem = container.createDiv("setting-item");
-    const updateInfo = updateItem.createDiv("setting-item-info");
-    updateInfo.createDiv({ cls: "setting-item-name", text: "Update Numbers" });
-    updateInfo.createDiv({ cls: "setting-item-description", text: "Update equation tags and text references" });
+    // Custom Input Container (rendered if custom selected)
+    const currentFormat = fileSettings.format || "default";
+    const options = ["default", "A-*", "2.*", "2-*", "custom"];
+    const isCustom = !options.includes(currentFormat);
 
-    const updateControl = updateItem.createDiv("setting-item-control");
-    const updateBtn = updateControl.createEl("button", {
+    customSetting = new Setting(container)
+      .setName("Custom Pattern")
+      .addText((text) => {
+        customInputEl = text.inputEl;
+        text
+          .setValue(isCustom ? currentFormat : "A-*")
+          .onChange(async (value) => {
+            await this.plugin.setFileFormat(path, value);
+          });
+        
+        text.inputEl.addEventListener("change", async () => {
+          if (isEnabled) {
+            await this.plugin.updateNumberingForActiveFile();
+          }
+        });
+      });
+    
+    customSetting.settingEl.addClass("eqn-sidebar-setting-item");
+    if (isCustom) {
+      customSetting.settingEl.show();
+    } else {
+      customSetting.settingEl.hide();
+    }
+
+    // Update Button (Full Width Accent)
+    const buttonWrapper = container.createDiv({ cls: "eqn-sidebar-btn-wrapper" });
+    const updateBtn = buttonWrapper.createEl("button", {
       text: "Update",
-      cls: isEnabled ? "mod-cta" : ""
+      cls: "mod-cta eqn-sidebar-update-btn"
     });
     if (!isEnabled) {
       updateBtn.setAttribute("disabled", "true");
@@ -261,89 +362,9 @@ export class EquationNumberingView extends ItemView {
       void this.plugin.updateNumberingForActiveFile();
     });
 
-    // Format Selector Item
-    const formatItem = container.createDiv("setting-item");
-    const formatInfo = formatItem.createDiv("setting-item-info");
-    formatInfo.createDiv({ cls: "setting-item-name", text: "Numbering Format" });
-    formatInfo.createDiv({ cls: "setting-item-description", text: "Select format style for equations" });
-
-    const formatControl = formatItem.createDiv("setting-item-control");
-    const formatSelect = formatControl.createEl("select", { cls: "dropdown" });
-    
-    const options = [
-      { value: "default", text: "Default (1, 2...)" },
-      { value: "A-*", text: "A-* (A-1, A-2...)" },
-      { value: "2.*", text: "2.* (2.1, 2.2...)" },
-      { value: "2-*", text: "2-* ((2-1), (2-2)...)" },
-      { value: "custom", text: "Custom..." }
-    ];
-
-    const currentFormat = fileSettings.format || "default";
-    const isCustom = !options.some(opt => opt.value === currentFormat) && currentFormat !== "default";
-
-    options.forEach(opt => {
-      const optionEl = formatSelect.createEl("option", {
-        value: opt.value,
-        text: opt.text
-      });
-      if (opt.value === currentFormat || (opt.value === "custom" && isCustom)) {
-        optionEl.setAttribute("selected", "true");
-      }
-    });
-
-    // Custom Input Container (rendered as setting item if selected)
-    const customItem = container.createDiv("setting-item");
-    if (isCustom) {
-      customItem.show();
-    } else {
-      customItem.hide();
-    }
-    const customInfo = customItem.createDiv("setting-item-info");
-    customInfo.createDiv({ cls: "setting-item-name", text: "Custom Pattern" });
-    customInfo.createDiv({ cls: "setting-item-description", text: "Use * for the equation number" });
-
-    const customControl = customItem.createDiv("setting-item-control");
-    const customInput = customControl.createEl("input", {
-      type: "text",
-      value: isCustom ? currentFormat : "A-*",
-      style: "width: 100%;"
-    });
-
-    formatSelect.addEventListener("change", () => {
-      const val = formatSelect.value;
-      const run = async () => {
-        if (val === "custom") {
-          customItem.show();
-          const customVal = customInput.value || "A-*";
-          await this.plugin.setFileFormat(path, customVal);
-        } else {
-          customItem.hide();
-          await this.plugin.setFileFormat(path, val);
-        }
-        if (isEnabled) {
-          await this.plugin.updateNumberingForActiveFile();
-        }
-      };
-      void run();
-    });
-
-    customInput.addEventListener("input", () => {
-      void this.plugin.setFileFormat(path, customInput.value);
-    });
-
-    customInput.addEventListener("change", () => {
-      const run = async () => {
-        if (isEnabled) {
-          await this.plugin.updateNumberingForActiveFile();
-        }
-      };
-      void run();
-    });
-
-    // Reuse duplicate equations toggle
-    new Setting(container)
-      .setName("Reuse first number for duplicate equations")
-      .setDesc("When enabled, identical display equations in one note receive the number of their first occurrence.")
+    // Repeat Recognition Toggle
+    const repeatSetting = new Setting(container)
+      .setName("Repeat Recognition")
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.reuseNumberForDuplicates)
@@ -355,6 +376,7 @@ export class EquationNumberingView extends ItemView {
             }
           })
       );
+    repeatSetting.settingEl.addClass("eqn-sidebar-setting-item");
   }
 }
 
@@ -634,13 +656,12 @@ export default class AutoEquationNumberingPlugin extends Plugin {
 
     this.applying.add(file.path);
     try {
-      const cursor = editor.getCursor();
-      const scrollInfo = editor.getScrollInfo();
-
-      editor.setValue(result.text);
-
-      editor.setCursor(cursor);
-      editor.scrollTo(scrollInfo.left, scrollInfo.top);
+      const diff = getDiffRange(original, result.text);
+      if (diff) {
+        const fromPos = editor.offsetToPos(diff.from);
+        const toPos = editor.offsetToPos(diff.to);
+        editor.replaceRange(diff.text, fromPos, toPos);
+      }
     } finally {
       window.setTimeout(() => this.applying.delete(file.path), 0);
     }

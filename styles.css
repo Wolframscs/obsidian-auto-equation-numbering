@@ -181,3 +181,98 @@ button.eqn-btn-disabled,
     opacity: 0.4;
     filter: grayscale(100%);
 }
+
+/* Sidebar Custom Styling */
+.eqn-sidebar-header-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px 16px 16px 16px;
+}
+
+.eqn-sidebar-logo-wrapper {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.eqn-sidebar-logo {
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    display: block;
+}
+
+.eqn-sidebar-title {
+    font-size: 1.25em;
+    font-weight: 600;
+    color: var(--text-normal);
+    margin-bottom: 4px;
+}
+
+.eqn-sidebar-subtitle {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.eqn-centered-description {
+    text-align: center;
+    padding: 16px;
+    color: var(--text-muted);
+}
+
+.eqn-sidebar-divider {
+    height: 1px;
+    background-color: var(--border-color);
+    opacity: 0.3;
+    margin: 8px 16px;
+}
+
+.equation-numbering-sidebar .eqn-sidebar-setting-item {
+    border-top: none;
+    padding: 10px 16px;
+}
+
+.equation-numbering-sidebar .eqn-sidebar-setting-item .setting-item-info {
+    margin-right: 12px;
+}
+
+.eqn-sidebar-btn-wrapper {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.eqn-sidebar-update-btn {
+    width: 100%;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 1em;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.eqn-sidebar-update-btn:hover:not(:disabled) {
+    background-color: var(--interactive-accent-hover);
+}
+
+.eqn-sidebar-update-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.eqn-sidebar-update-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
