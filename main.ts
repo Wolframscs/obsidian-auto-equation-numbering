@@ -455,6 +455,7 @@ export default class AutoEquationNumberingPlugin extends Plugin {
 
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => {
+        this.addHeaderButtons();
         this.updateStatusBar();
         if (this.sidebarView) {
           this.sidebarView.updateView();
@@ -464,6 +465,7 @@ export default class AutoEquationNumberingPlugin extends Plugin {
 
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
+        this.addHeaderButtons();
         if (this.sidebarView) {
           this.sidebarView.updateView();
         }
@@ -498,6 +500,7 @@ export default class AutoEquationNumberingPlugin extends Plugin {
     );
 
     this.app.workspace.onLayoutReady(() => {
+      this.addHeaderButtons();
       const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (activeView) {
         this.lastActiveMarkdownView = activeView;
@@ -507,6 +510,50 @@ export default class AutoEquationNumberingPlugin extends Plugin {
   }
 
   onunload(): void {
+    const leaves = this.app.workspace.getLeavesOfType("markdown");
+    for (const leaf of leaves) {
+      const view = leaf.view;
+      if (view instanceof MarkdownView) {
+        const btns = view.containerEl.querySelectorAll(".eqn-header-action");
+        btns.forEach(btn => btn.remove());
+      }
+    }
+  }
+
+  addHeaderButtons(): void {
+    const leaves = this.app.workspace.getLeavesOfType("markdown");
+    for (const leaf of leaves) {
+      const view = leaf.view;
+      if (view instanceof MarkdownView) {
+        const headerActionsEl = view.containerEl.querySelector(".view-actions");
+        if (headerActionsEl && !headerActionsEl.querySelector(".eqn-header-action")) {
+          const path = view.file?.path;
+          const isEnabled = path ? this.getFileSettings(path).enabled : false;
+
+          const btn = view.addAction("list-ordered", "Update Equation Numbers (UpNum)", () => {
+            void this.updateNumberingForActiveFile();
+          });
+          btn.addClass("eqn-header-action");
+          
+          if (isEnabled) {
+            btn.style.display = "";
+          } else {
+            btn.style.display = "none";
+          }
+        } else if (headerActionsEl) {
+          const btn = headerActionsEl.querySelector(".eqn-header-action") as HTMLElement;
+          if (btn) {
+            const path = view.file?.path;
+            const isEnabled = path ? this.getFileSettings(path).enabled : false;
+            if (isEnabled) {
+              btn.style.display = "";
+            } else {
+              btn.style.display = "none";
+            }
+          }
+        }
+      }
+    }
   }
 
   async loadSettings(): Promise<void> {
@@ -599,6 +646,7 @@ export default class AutoEquationNumberingPlugin extends Plugin {
       await this.renumberEditor(view.editor, view.file);
     }
     this.updateStatusBar();
+    this.addHeaderButtons();
   }
 
   async updateNumberingForActiveFile(): Promise<void> {

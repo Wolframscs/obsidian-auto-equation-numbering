@@ -14,6 +14,17 @@ const FILES_TO_UPLOAD = [
 ];
 
 async function main() {
+  // 0. Load .env if exists
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    for (const line of envContent.split(/\r?\n/)) {
+      if (line.startsWith('GITHUB_TOKEN=')) {
+        process.env.GITHUB_TOKEN = line.substring('GITHUB_TOKEN='.length).trim();
+      }
+    }
+  }
+
   // 1. Read manifest.json to get version
   let manifest;
   try {
