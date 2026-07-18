@@ -417,15 +417,28 @@ export default class AutoEquationNumberingPlugin extends Plugin {
     this.statusBarItem = this.addStatusBarItem();
     this.statusBarItem.addClass("equation-numbering-status-bar");
     this.statusBarItem.addEventListener("click", () => {
-      this.toggleNumberingForActiveFile()
-        .then(() => {
+      const view = this.getActiveMarkdownView();
+      if (!view || !view.file) {
+        new Notice("Open a Markdown note first.");
+        return;
+      }
+      const path = view.file.path;
+      const fileSettings = this.getFileSettings(path);
+      
+      const run = async () => {
+        if (!fileSettings.enabled) {
+          await this.setFileEnabled(path, true);
+          new Notice("Equation numbering enabled for this note.");
+          this.updateStatusBar();
           if (this.sidebarView) {
             this.sidebarView.updateView();
           }
-        })
-        .catch((err) => {
-          console.error("Failed to toggle numbering from status bar:", err);
-        });
+        }
+        await this.updateNumberingForActiveFile();
+      };
+      run().catch((err) => {
+        console.error("Failed to update numbering from status bar:", err);
+      });
     });
 
     // Ribbon Icon to Toggle Right Sidebar
@@ -703,11 +716,11 @@ export default class AutoEquationNumberingPlugin extends Plugin {
     if (isEnabled) {
       this.statusBarItem.addClass("is-active");
       this.statusBarItem.removeClass("is-inactive");
-      this.statusBarItem.setAttribute("title", "Equation numbering is enabled (Click to disable)");
+      this.statusBarItem.setAttribute("title", "Update Equation Numbers (UpNum)");
     } else {
       this.statusBarItem.addClass("is-inactive");
       this.statusBarItem.removeClass("is-active");
-      this.statusBarItem.setAttribute("title", "Equation numbering is disabled (Click to enable)");
+      this.statusBarItem.setAttribute("title", "Enable & Update Equation Numbers (UpNum)");
     }
   }
 
