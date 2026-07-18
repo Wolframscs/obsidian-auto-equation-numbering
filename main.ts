@@ -446,6 +446,26 @@ export default class AutoEquationNumberingPlugin extends Plugin {
       await this.activateView();
     });
 
+    // Ribbon Icon to Update Equation Numbers (UpNum)
+    this.addRibbonIcon("refresh-cw", "Update Equation Numbers (UpNum)", async () => {
+      const view = this.getActiveMarkdownView();
+      if (!view || !view.file) {
+        new Notice("Open a Markdown note first.");
+        return;
+      }
+      const path = view.file.path;
+      const fileSettings = this.getFileSettings(path);
+      if (!fileSettings.enabled) {
+        await this.setFileEnabled(path, true);
+        new Notice("Equation numbering enabled for this note.");
+        this.updateStatusBar();
+        if (this.sidebarView) {
+          this.sidebarView.updateView();
+        }
+      }
+      await this.updateNumberingForActiveFile();
+    });
+
     // Commands
     this.addCommand({
       id: "open-equation-numbering-sidebar",
