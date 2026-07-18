@@ -19,11 +19,13 @@ interface FileSettings {
 interface EquationNumberingSettings {
   reuseNumberForDuplicates: boolean;
   enabledFiles: Record<string, FileSettings | boolean>;
+  showEditHeaderButton: boolean;
 }
 
 const DEFAULT_SETTINGS: EquationNumberingSettings = {
   reuseNumberForDuplicates: true,
-  enabledFiles: {}
+  enabledFiles: {},
+  showEditHeaderButton: true
 };
 
 const DISPLAY_MATH_WITH_ANCHOR = /(?:<a\s+id="([^"]+)"[^>]*>[ \t]*<\/a>[ \t]*\n?)?(^|\n)([\t ]*)\$\$([\s\S]*?)\$\$/g;
@@ -377,6 +379,20 @@ export class EquationNumberingView extends ItemView {
           })
       );
     repeatSetting.settingEl.addClass("eqn-sidebar-setting-item");
+
+    // Show Header Button Toggle
+    const headerBtnSetting = new Setting(container)
+      .setName("Show Header Button")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showEditHeaderButton)
+          .onChange(async (value) => {
+            this.plugin.settings.showEditHeaderButton = value;
+            await this.plugin.saveSettings();
+            this.addHeaderButtons();
+          })
+      );
+    headerBtnSetting.settingEl.addClass("eqn-sidebar-setting-item");
   }
 }
 
@@ -525,27 +541,39 @@ export default class AutoEquationNumberingPlugin extends Plugin {
 
   addHeaderButtons(): void {
     const leaves = this.app.workspace.getLeavesOfType("markdown");
+    const showButton = this.settings.showEditHeaderButton;
+
     for (const leaf of leaves) {
       const view = leaf.view;
       if (view instanceof MarkdownView) {
         const headerActionsEl = view.containerEl.querySelector(".view-actions");
-        if (headerActionsEl && !headerActionsEl.querySelector(".eqn-header-action")) {
-          const btn = view.addAction("list-ordered", "Update Equation Numbers (UpNum)", async () => {
-            const path = view.file?.path;
-            if (path) {
-              const fileSettings = this.getFileSettings(path);
-              if (!fileSettings.enabled) {
-                await this.setFileEnabled(path, true);
-                new Notice("Equation numbering enabled for this note.");
-                this.updateStatusBar();
-                if (this.sidebarView) {
-                  this.sidebarView.updateView();
+        if (headerActionsEl) {
+          const existingBtn = headerActionsEl.querySelector(".eqn-header-action") as HTMLElement;
+          
+          if (showButton) {
+            if (!existingBtn) {
+              const btn = view.addAction("list-ordered", "Update Equation Numbers (UpNum)", async () => {
+                const path = view.file?.path;
+                if (path) {
+                  const fileSettings = this.getFileSettings(path);
+                  if (!fileSettings.enabled) {
+                    await this.setFileEnabled(path, true);
+                    new Notice("Equation numbering enabled for this note.");
+                    this.updateStatusBar();
+                    if (this.sidebarView) {
+                      this.sidebarView.updateView();
+                    }
+                  }
+                  await this.updateNumberingForActiveFile();
                 }
-              }
-              await this.updateNumberingForActiveFile();
+              });
+              btn.addClass("eqn-header-action");
             }
-          });
-          btn.addClass("eqn-header-action");
+          } else {
+            if (existingBtn) {
+              existingBtn.remove();
+            }
+          }
         }
       }
     }
@@ -909,6 +937,19 @@ class EquationNumberingSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.reuseNumberForDuplicates = value;
             await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Show header update button")
+      .setDesc("Show the UpNum update button in the top-right view header of active notes.")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showEditHeaderButton)
+          .onChange(async (value) => {
+            this.plugin.settings.showEditHeaderButton = value;
+            await this.plugin.saveSettings();
+            this.plugin.addHeaderButtons();
           })
       );
 
