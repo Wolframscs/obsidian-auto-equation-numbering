@@ -19,13 +19,11 @@ interface FileSettings {
 interface EquationNumberingSettings {
   reuseNumberForDuplicates: boolean;
   enabledFiles: Record<string, FileSettings | boolean>;
-  showEditHeaderButton: boolean;
 }
 
 const DEFAULT_SETTINGS: EquationNumberingSettings = {
   reuseNumberForDuplicates: true,
-  enabledFiles: {},
-  showEditHeaderButton: true
+  enabledFiles: {}
 };
 
 const DISPLAY_MATH_WITH_ANCHOR = /(?:<a\s+id="([^"]+)"[^>]*>[ \t]*<\/a>[ \t]*\n?)?(^|\n)([\t ]*)\$\$([\s\S]*?)\$\$/g;
@@ -380,19 +378,7 @@ export class EquationNumberingView extends ItemView {
       );
     repeatSetting.settingEl.addClass("eqn-sidebar-setting-item");
 
-    // Show Header Button Toggle
-    const headerBtnSetting = new Setting(container)
-      .setName("Show Header Button")
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.showEditHeaderButton)
-          .onChange(async (value) => {
-            this.plugin.settings.showEditHeaderButton = value;
-            await this.plugin.saveSettings();
-            this.addHeaderButtons();
-          })
-      );
-    headerBtnSetting.settingEl.addClass("eqn-sidebar-setting-item");
+
   }
 }
 
@@ -504,8 +490,6 @@ export default class AutoEquationNumberingPlugin extends Plugin {
 
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => {
-        this.addHeaderButtons();
-        window.setTimeout(() => this.addHeaderButtons(), 100);
         this.updateStatusBar();
         if (this.sidebarView) {
           this.sidebarView.updateView();
@@ -515,8 +499,6 @@ export default class AutoEquationNumberingPlugin extends Plugin {
 
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
-        this.addHeaderButtons();
-        window.setTimeout(() => this.addHeaderButtons(), 100);
         if (this.sidebarView) {
           this.sidebarView.updateView();
         }
@@ -551,8 +533,6 @@ export default class AutoEquationNumberingPlugin extends Plugin {
     );
 
     this.app.workspace.onLayoutReady(() => {
-      this.addHeaderButtons();
-      window.setTimeout(() => this.addHeaderButtons(), 100);
       const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (activeView) {
         this.lastActiveMarkdownView = activeView;
@@ -562,51 +542,6 @@ export default class AutoEquationNumberingPlugin extends Plugin {
   }
 
   onunload(): void {
-    const leaves = this.app.workspace.getLeavesOfType("markdown");
-    for (const leaf of leaves) {
-      const view = leaf.view;
-      if (view instanceof MarkdownView) {
-        const btns = view.containerEl.querySelectorAll(".eqn-header-action");
-        btns.forEach(btn => btn.remove());
-      }
-    }
-  }
-
-  addHeaderButtons(): void {
-    const leaves = this.app.workspace.getLeavesOfType("markdown");
-    const showButton = this.settings.showEditHeaderButton;
-
-    for (const leaf of leaves) {
-      const view = leaf.view;
-      if (view instanceof MarkdownView) {
-        const existingBtn = view.containerEl.querySelector(".eqn-header-action") as HTMLElement;
-        
-        if (showButton) {
-          if (!existingBtn) {
-            const btn = view.addAction("list-ordered", "Update Equation Numbers (UpNum)", async () => {
-              const path = view.file?.path;
-              if (path) {
-                const fileSettings = this.getFileSettings(path);
-                if (!fileSettings.enabled) {
-                  await this.setFileEnabled(path, true);
-                  new Notice("Equation numbering enabled for this note.");
-                  this.updateStatusBar();
-                  if (this.sidebarView) {
-                    this.sidebarView.updateView();
-                  }
-                }
-                await this.updateNumberingForActiveFile();
-              }
-            });
-            btn.addClass("eqn-header-action");
-          }
-        } else {
-          if (existingBtn) {
-            existingBtn.remove();
-          }
-        }
-      }
-    }
   }
 
   async loadSettings(): Promise<void> {
@@ -699,7 +634,6 @@ export default class AutoEquationNumberingPlugin extends Plugin {
       await this.renumberEditor(view.editor, view.file);
     }
     this.updateStatusBar();
-    this.addHeaderButtons();
   }
 
   async updateNumberingForActiveFile(): Promise<void> {
@@ -967,19 +901,6 @@ class EquationNumberingSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.reuseNumberForDuplicates = value;
             await this.plugin.saveSettings();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName("Show header update button")
-      .setDesc("Show the UpNum update button in the top-right view header of active notes.")
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.showEditHeaderButton)
-          .onChange(async (value) => {
-            this.plugin.settings.showEditHeaderButton = value;
-            await this.plugin.saveSettings();
-            this.plugin.addHeaderButtons();
           })
       );
 
