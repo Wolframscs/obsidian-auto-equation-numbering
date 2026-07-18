@@ -456,6 +456,7 @@ export default class AutoEquationNumberingPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => {
         this.addHeaderButtons();
+        window.setTimeout(() => this.addHeaderButtons(), 100);
         this.updateStatusBar();
         if (this.sidebarView) {
           this.sidebarView.updateView();
@@ -466,6 +467,7 @@ export default class AutoEquationNumberingPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
         this.addHeaderButtons();
+        window.setTimeout(() => this.addHeaderButtons(), 100);
         if (this.sidebarView) {
           this.sidebarView.updateView();
         }
@@ -501,6 +503,7 @@ export default class AutoEquationNumberingPlugin extends Plugin {
 
     this.app.workspace.onLayoutReady(() => {
       this.addHeaderButtons();
+      window.setTimeout(() => this.addHeaderButtons(), 100);
       const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (activeView) {
         this.lastActiveMarkdownView = activeView;
@@ -527,30 +530,22 @@ export default class AutoEquationNumberingPlugin extends Plugin {
       if (view instanceof MarkdownView) {
         const headerActionsEl = view.containerEl.querySelector(".view-actions");
         if (headerActionsEl && !headerActionsEl.querySelector(".eqn-header-action")) {
-          const path = view.file?.path;
-          const isEnabled = path ? this.getFileSettings(path).enabled : false;
-
-          const btn = view.addAction("list-ordered", "Update Equation Numbers (UpNum)", () => {
-            void this.updateNumberingForActiveFile();
+          const btn = view.addAction("list-ordered", "Update Equation Numbers (UpNum)", async () => {
+            const path = view.file?.path;
+            if (path) {
+              const fileSettings = this.getFileSettings(path);
+              if (!fileSettings.enabled) {
+                await this.setFileEnabled(path, true);
+                new Notice("Equation numbering enabled for this note.");
+                this.updateStatusBar();
+                if (this.sidebarView) {
+                  this.sidebarView.updateView();
+                }
+              }
+              await this.updateNumberingForActiveFile();
+            }
           });
           btn.addClass("eqn-header-action");
-          
-          if (isEnabled) {
-            btn.style.display = "";
-          } else {
-            btn.style.display = "none";
-          }
-        } else if (headerActionsEl) {
-          const btn = headerActionsEl.querySelector(".eqn-header-action") as HTMLElement;
-          if (btn) {
-            const path = view.file?.path;
-            const isEnabled = path ? this.getFileSettings(path).enabled : false;
-            if (isEnabled) {
-              btn.style.display = "";
-            } else {
-              btn.style.display = "none";
-            }
-          }
         }
       }
     }
