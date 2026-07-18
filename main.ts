@@ -546,33 +546,30 @@ export default class AutoEquationNumberingPlugin extends Plugin {
     for (const leaf of leaves) {
       const view = leaf.view;
       if (view instanceof MarkdownView) {
-        const headerActionsEl = view.containerEl.querySelector(".view-actions");
-        if (headerActionsEl) {
-          const existingBtn = headerActionsEl.querySelector(".eqn-header-action") as HTMLElement;
-          
-          if (showButton) {
-            if (!existingBtn) {
-              const btn = view.addAction("list-ordered", "Update Equation Numbers (UpNum)", async () => {
-                const path = view.file?.path;
-                if (path) {
-                  const fileSettings = this.getFileSettings(path);
-                  if (!fileSettings.enabled) {
-                    await this.setFileEnabled(path, true);
-                    new Notice("Equation numbering enabled for this note.");
-                    this.updateStatusBar();
-                    if (this.sidebarView) {
-                      this.sidebarView.updateView();
-                    }
+        const existingBtn = view.containerEl.querySelector(".eqn-header-action") as HTMLElement;
+        
+        if (showButton) {
+          if (!existingBtn) {
+            const btn = view.addAction("list-ordered", "Update Equation Numbers (UpNum)", async () => {
+              const path = view.file?.path;
+              if (path) {
+                const fileSettings = this.getFileSettings(path);
+                if (!fileSettings.enabled) {
+                  await this.setFileEnabled(path, true);
+                  new Notice("Equation numbering enabled for this note.");
+                  this.updateStatusBar();
+                  if (this.sidebarView) {
+                    this.sidebarView.updateView();
                   }
-                  await this.updateNumberingForActiveFile();
                 }
-              });
-              btn.addClass("eqn-header-action");
-            }
-          } else {
-            if (existingBtn) {
-              existingBtn.remove();
-            }
+                await this.updateNumberingForActiveFile();
+              }
+            });
+            btn.addClass("eqn-header-action");
+          }
+        } else {
+          if (existingBtn) {
+            existingBtn.remove();
           }
         }
       }

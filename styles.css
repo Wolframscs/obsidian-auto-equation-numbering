@@ -277,27 +277,29 @@ button.eqn-btn-disabled,
     cursor: not-allowed;
 }
 
-/* Color the header shortcut button to match the logo script-f */
+/* Color the header shortcut button to pure white for high visibility testing */
 .eqn-header-action,
 .view-action.eqn-header-action {
-    color: #7f8ffc !important;
-    opacity: 0.95 !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
 }
 
 .eqn-header-action:hover,
 .view-action.eqn-header-action:hover {
-    color: #9ba7ff !important;
+    color: #f0f0f0 !important;
     opacity: 1 !important;
 }
 
 .eqn-header-action svg,
 .view-action.eqn-header-action svg {
-    color: #7f8ffc !important;
-    stroke: #7f8ffc !important;
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+    fill: #ffffff !important;
 }
 
 .eqn-header-action:hover svg,
 .view-action.eqn-header-action:hover svg {
-    color: #9ba7ff !important;
-    stroke: #9ba7ff !important;
+    color: #f0f0f0 !important;
+    stroke: #f0f0f0 !important;
+    fill: #f0f0f0 !important;
 }
